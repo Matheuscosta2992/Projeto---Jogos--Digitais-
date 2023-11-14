@@ -1,0 +1,257 @@
+import pygame
+import sys
+from pygame.locals import *
+import random
+
+pygame.init()
+
+sw = 800
+sh = 600
+
+screen = pygame.display.set_mode((sw, sh))
+pygame.display.set_caption('SP SafeGuard')
+
+menu_bg = pygame.image.load('fundo.jpg').convert_alpha()
+menu_bg = pygame.transform.scale(menu_bg, (sw, sh))
+
+player_image = pygame.image.load('img femi.png').convert_alpha()
+player_image = pygame.transform.scale(player_image, (50, 40))
+
+game_over_image = pygame.image.load('img gameover.png').convert_alpha()
+game_over_image = pygame.transform.scale(game_over_image, (sw, sh))
+
+bullet_image = pygame.image.load('img tiro.png').convert_alpha()
+bullet_image = pygame.transform.scale(bullet_image, (10, 30))
+
+score_value = 0
+
+# Fonts
+fonte_menu = pygame.font.Font('fonts/hachicro.TTF', 50)
+fonte_menu2 = pygame.font.Font('fonts/hachicro.TTF', 40)
+fonte_historia = pygame.font.Font('fonts/Phatone-Regular.otf', 12)
+fonte_regras = pygame.font.Font('fonts/Gamer.ttf', 35)
+fonte_regras2 = pygame.font.Font('fonts/Gamer.ttf', 42)
+font = pygame.font.Font('fonts/BungeeSpice-Regular.ttf', 32)
+
+# Texts
+menu_titulo = "SP SafeGuard"
+menu_play = "Jogar"
+menu_instructions = "Instruções"
+menu_quit = "Sair"
+
+historia = "Bem-vindo ao SP SafeGuard, um jogo de sobrevivência ambientado"
+historia2 = "em São Paulo. Em um futuro não muito distante, a cidade enfrenta"
+historia3 = "diversos desafios, desde enchentes até deslizamentos de terra."
+historia4 = "Você é parte de uma equipe de resposta a emergências, e sua missão"
+historia5 = "é garantir a segurança da população em meio a essas adversidades."
+pressspace = "Pressione Enter para começar."
+
+instructions1 = 'Instruções:'
+rule1 = 'Objetivo do jogo: Sobreviva aos desastres ambientais e ajude a população.'
+instructions2 = 'Controles:'
+rule2 = 'Setas - Movimentar'
+rule3 = 'Barra de Espaço - Atirar'
+instructions3 = 'Evite os obstáculos e colete pontos para garantir a segurança da cidade.'
+press_escape = "Pressione ESC para voltar ao menu."
+
+# Buttons
+button_play_x = 100
+button_play_y = 255
+button_instructions_x = 100
+button_instructions_y = 310
+button_quit_x = 100
+button_quit_y = 420
+
+textX = 10
+textY = 10
+
+ADDENEMY = pygame.USEREVENT + 0
+pygame.time.set_timer(ADDENEMY, 500)
+
+ADDTRASH = pygame.USEREVENT + 2
+pygame.time.set_timer(ADDTRASH, 6000)
+
+player = pygame.sprite.Sprite()
+player.image = player_image
+player.rect = player.image.get_rect(center=(400, 550))
+
+enemies = pygame.sprite.Group()
+trashes = pygame.sprite.Group()
+all_sprites = pygame.sprite.Group()
+all_sprites.add(player)
+
+clock = pygame.time.Clock()
+
+def apresentacao():
+    while True:
+        pygame.display.set_caption('Apresentação')
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    menu(sh)
+                elif event.key == K_RETURN:
+                    start_game()
+        screen.blit(menu_bg, (0, 0))
+        intro = fonte_historia.render(historia, True, (0, 247, 0))
+        screen.blit(intro, (10, 70))
+        intro = fonte_historia.render(historia2, True, (0, 247, 0))
+        screen.blit(intro, (10, 95))
+        intro = fonte_historia.render(historia3, True, (0, 247, 0))
+        screen.blit(intro, (10, 120))
+        intro = fonte_historia.render(historia4, True, (0, 247, 0))
+        screen.blit(intro, (10, 145))
+        intro = fonte_historia.render(historia5, True, (0, 247, 0))
+        screen.blit(intro, (10, 170))
+        intro = fonte_historia.render(pressspace, True, (0, 247, 0))
+        screen.blit(intro, (230, 520))
+        pygame.display.update()
+
+def instructions():
+    while True:
+        pygame.display.set_caption('Instruções')
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    menu(sh)
+                elif event.key == K_RETURN:
+                    apresentacao()
+
+        screen.blit(menu_bg, (0, 0))
+        intro = fonte_regras.render(instructions1, True, (255, 0, 0))
+        screen.blit(intro, (150, 20))
+        intro = fonte_regras2.render(rule1, True, (255, 255, 255))
+        screen.blit(intro, (70, 70))
+        intro = fonte_regras2.render(instructions2, True, (255, 0, 0))
+        screen.blit(intro, (70, 120))
+        intro = fonte_regras2.render(rule2, True, (255, 255, 255))
+        screen.blit(intro, (70, 170))
+        intro = fonte_regras2.render(rule3, True, (255, 255, 255))
+        screen.blit(intro, (70, 220))
+        intro = fonte_regras2.render(instructions3, True, (255, 0, 0))
+        screen.blit(intro, (70, 270))
+        intro = fonte_regras2.render(press_escape, True, (0, 247, 0))
+        screen.blit(intro, (70, 400))
+        pygame.display.update()
+
+def start_game():
+    pygame.time.set_timer(ADDENEMY, 500)
+    pygame.time.set_timer(ADDTRASH, 6000)
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    menu(sh)
+
+        keys = pygame.key.get_pressed()
+        if keys[K_LEFT] and player.rect.left > 0:
+            player.rect.x -= 8
+        if keys[K_RIGHT] and player.rect.right < sw:
+            player.rect.x += 8
+        if keys[K_UP] and player.rect.top > 0:
+            player.rect.y -= 8
+        if keys[K_DOWN] and player.rect.bottom < sh:
+            player.rect.y += 8
+
+        for event in pygame.event.get():
+            if event.type == ADDENEMY:
+                novo_inimigo = Enemy()
+                enemies.add(novo_inimigo)
+                all_sprites.add(novo_inimigo)
+
+            if event.type == ADDTRASH:
+                novo_lixo = Trash()
+                trashes.add(novo_lixo)
+                all_sprites.add(novo_lixo)
+
+        for entity in all_sprites:
+            screen.blit(entity.image, entity.rect)
+
+        # Check for collisions
+        hits = pygame.sprite.spritecollide(player, enemies, False)
+        if hits:
+            game_over()
+
+        # Update the display
+        pygame.display.flip()
+
+        # Cap the frame rate
+        clock.tick(30)
+
+def game_over():
+    pygame.time.set_timer(ADDENEMY, 0)
+    pygame.time.set_timer(ADDTRASH, 0)
+    while True:
+        pygame.display.set_caption('Game Over')
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    menu(sh)
+
+        screen.blit(game_over_image, (0, 0))
+        intro = fonte_menu2.render("Fim de Jogo", True, (255, 0, 0))
+        screen.blit(intro, (300, 200))
+        intro = fonte_menu2.render(f"Pontuação: {score_value}", True, (255, 255, 255))
+        screen.blit(intro, (300, 250))
+        intro = fonte_menu2.render("Pressione ESC para voltar ao menu", True, (0, 247, 0))
+        screen.blit(intro, (200, 300))
+        pygame.display.update()
+
+def menu(sh):
+    while True:
+        pygame.display.set_caption('SP SafeGuard')
+        screen.blit(menu_bg, (0, 0))
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+
+        play_btn = pygame.Rect(button_play_x, button_play_y, 600, 60)
+        instructions_btn = pygame.Rect(button_instructions_x, button_instructions_y, 600, 60)
+        quit_btn = pygame.Rect(button_quit_x, button_quit_y, 600, 60)
+
+        pygame.draw.rect(screen, (255, 0, 0), play_btn)
+        pygame.draw.rect(screen, (255, 0, 0), instructions_btn)
+        pygame.draw.rect(screen, (255, 0, 0), quit_btn)
+
+        menu_titulo1 = fonte_menu.render(menu_titulo, True, (255, 255, 255))
+        screen.blit(menu_titulo1, (sw/2 - 200, sh/8))
+
+        if button_play_x + 600 > mouse[0] > button_play_x and button_play_y + 60 > mouse[1] > button_play_y:
+            pygame.draw.rect(screen, (255, 255, 255), play_btn)
+            if click[0] == 1:
+                apresentacao()
+
+        if button_instructions_x + 600 > mouse[0] > button_instructions_x and button_instructions_y + 60 > mouse[1] > button_instructions_y:
+            pygame.draw.rect(screen, (255, 255, 255), instructions_btn)
+            if click[0] == 1:
+                instructions()
+
+        if button_quit_x + 600 > mouse[0] > button_quit_x and button_quit_y + 60 > mouse[1] > button_quit_y:
+            pygame.draw.rect(screen, (255, 255, 255), quit_btn)
+            if click[0] == 1:
+                pygame.quit()
+                sys.exit()
+
+        play = fonte_menu2.render(menu_play, True, (0, 0, 0))
+        screen.blit(play, (sw/2 - 45, sh/2.7))
+
+        instructions = fonte_menu2.render(menu_instructions, True, (0, 0, 0))
+        screen.blit(instructions, (sw/2 - 100, sh/2.1))
+
+        quit_game = fonte_menu2.render(menu_quit, True, (0, 0, 0))
+        screen.blit(quit_game, (sw/2 - 45, sh/1.5))
+
+        pygame.display.flip()
+
+if __name__ == "__main__":
+    menu(sh)
